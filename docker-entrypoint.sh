@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 NETWORK="${FRIGATE_NETWORK:-mainnet}"
@@ -6,8 +6,13 @@ HOME_DIR="/data/frigate"
 NET_DIR="${HOME_DIR}/${NETWORK}"
 CONFIG_FILE="${NET_DIR}/config.toml"
 BITCOIN_DATA_DIR="${FRIGATE_BITCOIN_DATA_DIR:-/data/.bitcoin}"
+LOG_FILE="/data/frigate.log"
 
 mkdir -p "${NET_DIR}"
+
+# Truncate log on start so the dashboard tail is bounded after restarts.
+: > "${LOG_FILE}"
+chmod 644 "${LOG_FILE}" 2>/dev/null || true
 
 DEFAULT_START_HEIGHT=0
 case "${NETWORK}" in
@@ -65,5 +70,8 @@ if [ -n "${FRIGATE_BACKEND_ELECTRUM}" ]; then
 fi
 
 echo "Frigate starting on network=${NETWORK} startHeight=${START_HEIGHT} bitcoind=${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_RPC_PORT}"
+echo "Logging to ${LOG_FILE}"
 
-exec /opt/frigate/bin/frigate -n "${NETWORK}" -d "${HOME_DIR}"
+# Stream stdout+stderr to LOG_FILE via tee (bash process substitution).
+# exec keeps Frigate as PID 1 so SIGTERM from Umbrel is delivered directly.
+exec /opt/frigate/bin/frigate -n "${NETWORK}" -d "${HOME_DIR}" > >(tee -a "${LOG_FILE}") 2>&1
