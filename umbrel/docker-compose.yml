@@ -20,7 +20,7 @@ services:
     command: ["sh", "-c", "envsubst '$$FRIGATE_TOR_ADDRESS $$FRIGATE_VERSION' < /tmp/index.template.html > /usr/share/nginx/html/index.html && exec nginx -g 'daemon off;'"]
 
   server:
-    image: ghcr.io/4rkad/frigate-umbrel:1.4.1@sha256:47a7f16fa8eb98dda6b3e234fc9be083b073d61c86e0966eff07ce517df6c281
+    image: ghcr.io/4rkad/frigate-umbrel:1.4.1-1@sha256:de5ba75957c3563e728322e5e3adecb64a4c94348decac59bdb85266ff038d6c
     user: "1000:1000"
     restart: on-failure
     stop_grace_period: 1m
