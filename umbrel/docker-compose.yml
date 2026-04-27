@@ -7,7 +7,7 @@ services:
       APP_PORT: 57001
 
   server:
-    image: ghcr.io/4rkad/frigate-umbrel:v1.4.1@sha256:DIGEST_PLACEHOLDER
+    image: ghcr.io/4rkad/frigate-umbrel:1.4.1@sha256:47a7f16fa8eb98dda6b3e234fc9be083b073d61c86e0966eff07ce517df6c281
     user: "1000:1000"
     restart: on-failure
     stop_grace_period: 1m
