@@ -7,7 +7,7 @@ services:
       APP_PORT: 57001
 
   server:
-    image: ghcr.io/semillabitcoin/frigate-umbrel:v1.4.1@sha256:DIGEST_PLACEHOLDER
+    image: ghcr.io/4rkad/frigate-umbrel:v1.4.1@sha256:DIGEST_PLACEHOLDER
     user: "1000:1000"
     restart: on-failure
     stop_grace_period: 1m
