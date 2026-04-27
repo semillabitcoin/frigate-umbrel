@@ -43,6 +43,11 @@ computeBackend = "${FRIGATE_COMPUTE_BACKEND:-CPU}"
 port = ${FRIGATE_PORT:-57001}
 EOF
 
+if [ -n "${FRIGATE_BACKEND_ELECTRUM}" ]; then
+    echo "backendElectrumServer = \"${FRIGATE_BACKEND_ELECTRUM}\"" >> "${CONFIG_FILE}"
+    echo "Backend Electrum server: ${FRIGATE_BACKEND_ELECTRUM}"
+fi
+
 echo "Frigate starting on network=${NETWORK} startHeight=${START_HEIGHT} bitcoind=${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_RPC_PORT}"
 
 exec /opt/frigate/bin/frigate -n "${NETWORK}" -d "${HOME_DIR}"
