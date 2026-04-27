@@ -5,6 +5,7 @@ NETWORK="${FRIGATE_NETWORK:-mainnet}"
 HOME_DIR="/data/frigate"
 NET_DIR="${HOME_DIR}/${NETWORK}"
 CONFIG_FILE="${NET_DIR}/config.toml"
+BITCOIN_DATA_DIR="${FRIGATE_BITCOIN_DATA_DIR:-/data/.bitcoin}"
 
 mkdir -p "${NET_DIR}"
 
@@ -20,9 +21,25 @@ if [ -z "${APP_BITCOIN_NODE_IP}" ] || [ -z "${APP_BITCOIN_RPC_PORT}" ]; then
     exit 1
 fi
 
-if [ -z "${APP_BITCOIN_RPC_USER}" ] || [ -z "${APP_BITCOIN_RPC_PASS}" ]; then
-    echo "ERROR: APP_BITCOIN_RPC_USER and APP_BITCOIN_RPC_PASS must be set"
-    exit 1
+# Pick auth method: prefer COOKIE if bitcoind data dir is mounted, fallback to USERPASS
+AUTH_BLOCK=""
+if [ -d "${BITCOIN_DATA_DIR}" ]; then
+    COOKIE_FILE=$(find "${BITCOIN_DATA_DIR}" -maxdepth 2 -name '.cookie' -type f 2>/dev/null | head -1)
+    if [ -n "${COOKIE_FILE}" ]; then
+        echo "Cookie auth: found ${COOKIE_FILE}, using dataDir=${BITCOIN_DATA_DIR}"
+        AUTH_BLOCK="authType = \"COOKIE\"
+dataDir = \"${BITCOIN_DATA_DIR}\""
+    fi
+fi
+
+if [ -z "${AUTH_BLOCK}" ]; then
+    if [ -z "${APP_BITCOIN_RPC_USER}" ] || [ -z "${APP_BITCOIN_RPC_PASS}" ]; then
+        echo "ERROR: no .cookie found at ${BITCOIN_DATA_DIR} and APP_BITCOIN_RPC_USER/PASS not set"
+        exit 1
+    fi
+    echo "Userpass auth: APP_BITCOIN_RPC_USER=${APP_BITCOIN_RPC_USER}"
+    AUTH_BLOCK="authType = \"USERPASS\"
+auth = \"${APP_BITCOIN_RPC_USER}:${APP_BITCOIN_RPC_PASS}\""
 fi
 
 cat > "${CONFIG_FILE}" <<EOF
@@ -30,8 +47,7 @@ cat > "${CONFIG_FILE}" <<EOF
 [core]
 connect = true
 server = "http://${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_RPC_PORT}"
-authType = "USERPASS"
-auth = "${APP_BITCOIN_RPC_USER}:${APP_BITCOIN_RPC_PASS}"
+${AUTH_BLOCK}
 
 [index]
 startHeight = ${START_HEIGHT}
