@@ -359,7 +359,14 @@ function fetchStatus() {
       var m, last = null;
       while ((m = re.exec(text)) !== null) last = m;
       if (!last) {
-        if (statusLastHeight === null) setStatus('starting');
+        if (statusLastHeight === null) {
+          setStatus('starting');
+        } else {
+          statusStableCount++;
+          if (statusStableCount >= STABLE_TO_RUNNING) {
+            setStatus('running', statusLastHeight);
+          }
+        }
         return;
       }
       var h = parseInt(last[1], 10);
