@@ -355,16 +355,22 @@ function fetchStatus() {
       throw new Error('http ' + r.status);
     })
     .then(function(text) {
+      var ready = /Electrum server listening/.test(text);
       var re = /block height (\d+)/gi;
       var m, last = null;
       while ((m = re.exec(text)) !== null) last = m;
       if (!last) {
-        if (statusLastHeight === null) {
+        if (!ready) {
           setStatus('starting');
-        } else {
+        } else if (statusLastHeight !== null) {
           statusStableCount++;
           if (statusStableCount >= STABLE_TO_RUNNING) {
             setStatus('running', statusLastHeight);
+          }
+        } else {
+          statusStableCount++;
+          if (statusStableCount >= STABLE_TO_RUNNING) {
+            setStatus('running');
           }
         }
         return;
