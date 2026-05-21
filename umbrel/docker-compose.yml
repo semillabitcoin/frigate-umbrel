@@ -59,4 +59,4 @@ services:
     environment:
       HOME: "/tmp"
     entrypoint: ["/bin/sh", "-c"]
-    command: ["mkdir -p /data/app-4rkad-frigate/main && chmod 700 /data/app-4rkad-frigate/main && printf 'HiddenServiceDir /data/app-4rkad-frigate/main\\nHiddenServicePort 57001 server:57001\\n' > /tmp/torrc && exec tor -f /tmp/torrc"]
+    command: ["mkdir -p /data/app-4rkad-frigate/main && chmod 700 /data/app-4rkad-frigate/main && printf 'HiddenServiceDir /data/app-4rkad-frigate/main\\nHiddenServicePort 57001 4rkad-frigate_server_1:57001\\n' > /tmp/torrc && exec tor -f /tmp/torrc"]

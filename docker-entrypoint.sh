@@ -72,6 +72,29 @@ fi
 echo "Frigate starting on network=${NETWORK} startHeight=${START_HEIGHT} bitcoind=${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_RPC_PORT}"
 echo "Logging to ${LOG_FILE}"
 
+# Background poller: writes "block height N" lines to LOG_FILE every 30s so the
+# dashboard regex /block height (\d+)/gi keeps matching when Frigate is idle at
+# the tip (Frigate 1.5.2 only logs "Block index is up to date" in steady state).
+(
+    sleep 5
+    while true; do
+        cookie_file=$(find "${BITCOIN_DATA_DIR}" -maxdepth 2 -name '.cookie' -type f 2>/dev/null | head -1)
+        if [ -n "$cookie_file" ]; then
+            auth=$(cat "$cookie_file")
+            response=$(curl -s --max-time 5 --user "$auth" \
+                --data-binary '{"jsonrpc":"1.0","id":"f","method":"getblockcount","params":[]}' \
+                -H 'content-type: application/json' \
+                "http://${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_RPC_PORT}/" 2>/dev/null)
+            height=$(echo "$response" | grep -oE '"result":[0-9]+' | grep -oE '[0-9]+$')
+            if [ -n "$height" ]; then
+                ts=$(date '+%Y-%m-%d %H:%M:%S,000')
+                echo "${ts} INFO Bitcoind block height ${height}" >> "${LOG_FILE}"
+            fi
+        fi
+        sleep 30
+    done
+) &
+
 # Stream stdout+stderr to LOG_FILE via tee (bash process substitution).
 # exec keeps Frigate as PID 1 so SIGTERM from Umbrel is delivered directly.
 exec /opt/frigate/bin/frigate -n "${NETWORK}" -d "${HOME_DIR}" > >(tee -a "${LOG_FILE}") 2>&1
