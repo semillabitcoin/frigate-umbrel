@@ -2,3 +2,10 @@ data/
 *.tar.gz
 .DS_Store
 *.swp
+
+# Claude Code local overrides
+.claude/
+
+# Local single-arch build (uses pre-built tarball, references local paths)
+Dockerfile.local
+frigate-*.tar.gz
