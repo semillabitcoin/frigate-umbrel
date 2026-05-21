@@ -356,6 +356,30 @@ function fetchStatus() {
     })
     .then(function(text) {
       var ready = /Electrum server listening/.test(text);
+
+      // Priority: if Frigate is actively indexing, show progress regardless of any
+      // "block height N" lines from the entrypoint poller. Look for the latest
+      // "Indexing progress: N / M blocks (P%, height H)" within the tail buffer.
+      var idxRe = /Indexing progress: \d+ \/ \d+ blocks \(([0-9.]+)%, height (\d+)\)/g;
+      var idxMatch, idxLast = null;
+      while ((idxMatch = idxRe.exec(text)) !== null) idxLast = idxMatch;
+      if (idxLast) {
+        var idxLineStart = text.lastIndexOf('\n', idxLast.index) + 1;
+        var idxTs = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/.exec(text.slice(idxLineStart));
+        var idxRecent = true;
+        if (idxTs) {
+          var idxMs = Date.parse(idxTs[1] + 'T' + idxTs[2] + 'Z');
+          idxRecent = (Date.now() - idxMs) < 120000;
+        }
+        if (idxRecent) {
+          var idxH = parseInt(idxLast[2], 10);
+          setStatus('indexing', idxH);
+          statusLastHeight = idxH;
+          statusStableCount = 0;
+          return;
+        }
+      }
+
       var re = /block height (\d+)/gi;
       var m, last = null;
       while ((m = re.exec(text)) !== null) last = m;

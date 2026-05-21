@@ -3,12 +3,11 @@ set -e
 
 NETWORK="${FRIGATE_NETWORK:-mainnet}"
 HOME_DIR="/data/frigate"
-NET_DIR="${HOME_DIR}/${NETWORK}"
-CONFIG_FILE="${NET_DIR}/config.toml"
+CONFIG_FILE="${HOME_DIR}/config.toml"
 BITCOIN_DATA_DIR="${FRIGATE_BITCOIN_DATA_DIR:-/data/.bitcoin}"
 LOG_FILE="/data/frigate.log"
 
-mkdir -p "${NET_DIR}"
+mkdir -p "${HOME_DIR}"
 
 # Truncate log on start so the dashboard tail is bounded after restarts.
 : > "${LOG_FILE}"
@@ -78,9 +77,18 @@ echo "Logging to ${LOG_FILE}"
 # Timestamp is intentionally stale (~30 min ago) so the dashboard fast-path in
 # web/index.html triggers (ageMs > 90s) and shows "Running · Block N" instead
 # of getting stuck on "Indexing · Block N".
+# Skips emission while Frigate is actively indexing — otherwise the stale-ts
+# line would override the live "Indexing progress" line and the UI would flip
+# to "Running" mid-sync.
 (
     sleep 5
     while true; do
+        # Skip poll while Frigate is indexing (last 200 lines contain "Indexing progress"
+        # newer than 90s — Frigate emits one every ~30s during sync)
+        if [ -f "${LOG_FILE}" ] && tail -n 200 "${LOG_FILE}" 2>/dev/null | grep -q 'Indexing progress'; then
+            sleep 30
+            continue
+        fi
         cookie_file=$(find "${BITCOIN_DATA_DIR}" -maxdepth 2 -name '.cookie' -type f 2>/dev/null | head -1)
         if [ -n "$cookie_file" ]; then
             auth=$(cat "$cookie_file")
