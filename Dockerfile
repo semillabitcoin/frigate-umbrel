@@ -1,6 +1,6 @@
 FROM debian:bookworm-slim
 
-ARG FRIGATE_VERSION=1.5.0
+ARG FRIGATE_VERSION=1.5.2
 ARG TARGETARCH
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
