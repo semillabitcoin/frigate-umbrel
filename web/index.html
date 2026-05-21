@@ -376,7 +376,22 @@ function fetchStatus() {
         return;
       }
       var h = parseInt(last[1], 10);
-      if (statusLastHeight === null || h > statusLastHeight) {
+      if (statusLastHeight === null) {
+        var lineStart = text.lastIndexOf('\n', last.index) + 1;
+        var tsMatch = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/.exec(text.slice(lineStart));
+        if (tsMatch) {
+          var lineMs = Date.parse(tsMatch[1] + 'T' + tsMatch[2] + 'Z');
+          var ageMs = Date.now() - lineMs;
+          if (ageMs > 90000 && ageMs < 86400000) {
+            setStatus('running', h);
+            statusLastHeight = h;
+            statusStableCount = STABLE_TO_RUNNING;
+            return;
+          }
+        }
+        setStatus('indexing', h);
+        statusStableCount = 0;
+      } else if (h > statusLastHeight) {
         setStatus('indexing', h);
         statusStableCount = 0;
       } else {
