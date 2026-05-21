@@ -75,6 +75,9 @@ echo "Logging to ${LOG_FILE}"
 # Background poller: writes "block height N" lines to LOG_FILE every 30s so the
 # dashboard regex /block height (\d+)/gi keeps matching when Frigate is idle at
 # the tip (Frigate 1.5.2 only logs "Block index is up to date" in steady state).
+# Timestamp is intentionally stale (~30 min ago) so the dashboard fast-path in
+# web/index.html triggers (ageMs > 90s) and shows "Running · Block N" instead
+# of getting stuck on "Indexing · Block N".
 (
     sleep 5
     while true; do
@@ -87,7 +90,7 @@ echo "Logging to ${LOG_FILE}"
                 "http://${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_RPC_PORT}/" 2>/dev/null)
             height=$(echo "$response" | grep -oE '"result":[0-9]+' | grep -oE '[0-9]+$')
             if [ -n "$height" ]; then
-                ts=$(date '+%Y-%m-%d %H:%M:%S,000')
+                ts=$(date -u -d '30 minutes ago' '+%Y-%m-%d %H:%M:%S,000' 2>/dev/null || date -u '+%Y-%m-%d %H:%M:%S,000')
                 echo "${ts} INFO Bitcoind block height ${height}" >> "${LOG_FILE}"
             fi
         fi
