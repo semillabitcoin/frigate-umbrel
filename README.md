@@ -2,6 +2,8 @@
 
 Umbrel app packaging for [Frigate](https://github.com/sparrowwallet/frigate) — Silent Payments Electrum server for Sparrow Wallet.
 
+> Originally maintained by [4rkad](https://github.com/4rkad). Transferred to [semillabitcoin](https://github.com/semillabitcoin) on 2026-05-23. Existing installs continue to receive updates through the original community app store URL — no action required for users.
+
 ## Build
 
 ```sh
